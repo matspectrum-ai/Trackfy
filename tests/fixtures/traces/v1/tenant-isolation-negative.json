@@ -1,0 +1,20 @@
+{
+  "name": "tenant-isolation-negative",
+  "version": 1,
+  "description": "A credential scoped to one site must not ingest an event claiming another tenant scope.",
+  "credential_scope": {
+    "organization_id":"org_test_0001",
+    "workspace_id":"ws_test_0001",
+    "site_id":"site_test_0001"
+  },
+  "event_tenant": {
+    "organization_id":"org_test_0002",
+    "workspace_id":"ws_test_0002",
+    "site_id":"site_test_0002"
+  },
+  "expected": {
+    "accepted": false,
+    "http_status": 403,
+    "error_code": "TENANT_SCOPE_MISMATCH"
+  }
+}
