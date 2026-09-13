@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trackfy.dev/contracts/event/v1/event.schema.json",
+  "title": "Trackfy Canonical Event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id","event_name","event_version","occurred_at","received_at","source","tenant","identity","acquisition","payload","provenance"],
+  "properties": {
+    "event_id": {"type":"string","pattern":"^evt_[A-Za-z0-9_-]{8,}$"},
+    "event_name": {"type":"string","minLength":1,"maxLength":100,"pattern":"^[a-z][a-z0-9_]*$"},
+    "event_version": {"type":"integer","const":1},
+    "occurred_at": {"type":"string","format":"date-time"},
+    "received_at": {"type":"string","format":"date-time"},
+    "source": {
+      "type":"object","additionalProperties":false,"required":["type","provider"],
+      "properties": {
+        "type":{"type":"string","enum":["browser","server","gtm_web","gtm_server","webhook","offline","api"]},
+        "provider":{"type":"string","minLength":1,"maxLength":100},
+        "integration_id":{"type":["string","null"]}
+      }
+    },
+    "tenant": {
+      "type":"object","additionalProperties":false,"required":["organization_id","workspace_id"],
+      "properties": {
+        "organization_id":{"type":"string","pattern":"^org_[A-Za-z0-9_-]{8,}$"},
+        "workspace_id":{"type":"string","pattern":"^ws_[A-Za-z0-9_-]{8,}$"},
+        "site_id":{"type":["string","null"],"pattern":"^site_[A-Za-z0-9_-]{8,}$"}
+      }
+    },
+    "identity": {
+      "type":"object","additionalProperties":false,
+      "properties": {
+        "visitor_id":{"type":["string","null"],"pattern":"^vis_[A-Za-z0-9_-]{8,}$"},
+        "session_id":{"type":["string","null"],"pattern":"^ses_[A-Za-z0-9_-]{8,}$"},
+        "click_id":{"type":["string","null"],"pattern":"^clk_[A-Za-z0-9_-]{8,}$"},
+        "customer_id":{"type":["string","null"],"pattern":"^cus_[A-Za-z0-9_-]{8,}$"},
+        "external_customer_id":{"type":["string","null"]},
+        "external_order_id":{"type":["string","null"]}
+      }
+    },
+    "acquisition": {
+      "type":"object","additionalProperties":false,
+      "properties": {
+        "utm_source":{"type":["string","null"]},"utm_medium":{"type":["string","null"]},
+        "utm_campaign":{"type":["string","null"]},"utm_content":{"type":["string","null"]},"utm_term":{"type":["string","null"]},
+        "fbclid":{"type":["string","null"]},"gclid":{"type":["string","null"]},"ttclid":{"type":["string","null"]},
+        "msclkid":{"type":["string","null"]},"twclid":{"type":["string","null"]},"li_fat_id":{"type":["string","null"]},
+        "referrer":{"type":["string","null"]}
+      }
+    },
+    "context": {
+      "type":"object","additionalProperties":false,
+      "properties": {
+        "url":{"type":["string","null"],"format":"uri"},"path":{"type":["string","null"]},"title":{"type":["string","null"]},
+        "device_type":{"type":["string","null"]},"locale":{"type":["string","null"]},"timezone":{"type":["string","null"]}
+      }
+    },
+    "consent":{"type":"object"},
+    "payload":{"type":"object"},
+    "provenance": {
+      "type":"object","additionalProperties":false,
+      "properties": {
+        "external_event_id":{"type":["string","null"]},
+        "source_record_id":{"type":["string","null"]},
+        "raw_event_reference":{"type":["string","null"]}
+      }
+    }
+  }
+}
