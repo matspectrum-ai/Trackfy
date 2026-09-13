@@ -1,0 +1,160 @@
+openapi: 3.1.0
+info:
+  title: Trackfy Ingestion API
+  version: 1.0.0
+  description: Canonical event ingestion boundary for browser, GTM, server and integration producers.
+servers:
+  - url: https://track.example.com
+paths:
+  /v1/ingest:
+    post:
+      operationId: ingestEvent
+      summary: Ingest one canonical event
+      security:
+        - siteKey: []
+        - integrationKey: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../event/v1/event.schema.json'
+      responses:
+        '202':
+          description: Event accepted for processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestAccepted'
+        '200':
+          description: Idempotent replay of a previously accepted request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestAccepted'
+        '400':
+          description: Malformed request or contract validation failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid credentials.
+        '403':
+          description: Credential valid but not authorized for the tenant/site.
+        '409':
+          description: Idempotency key reused with materially different request content.
+        '413':
+          description: Request exceeds configured size limit.
+        '429':
+          description: Rate limit exceeded.
+        '500':
+          description: Transient server failure; producer may retry safely.
+  /v1/ingest/batch:
+    post:
+      operationId: ingestBatch
+      summary: Ingest multiple events
+      security:
+        - siteKey: []
+        - integrationKey: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items:
+                    $ref: '../event/v1/event.schema.json'
+      responses:
+        '202':
+          description: Batch accepted. Individual processing outcomes are exposed by event ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchAccepted'
+        '400':
+          description: Batch contract validation failed.
+        '401':
+          description: Missing or invalid credentials.
+        '403':
+          description: Credential not authorized for the target tenant/site.
+        '413':
+          description: Batch exceeds configured limits.
+        '429':
+          description: Rate limit exceeded.
+components:
+  securitySchemes:
+    siteKey:
+      type: apiKey
+      in: header
+      name: X-Trackfy-Site-Key
+    integrationKey:
+      type: apiKey
+      in: header
+      name: X-Trackfy-Integration-Key
+  schemas:
+    IngestAccepted:
+      type: object
+      additionalProperties: false
+      required: [event_id, status]
+      properties:
+        event_id:
+          type: string
+        status:
+          type: string
+          enum: [accepted, duplicate]
+        processing_url:
+          type: string
+          format: uri
+    BatchAccepted:
+      type: object
+      additionalProperties: false
+      required: [status, results]
+      properties:
+        status:
+          type: string
+          enum: [accepted]
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [event_id, status]
+            properties:
+              event_id: {type: string}
+              status: {type: string, enum: [accepted, duplicate, rejected]}
+              reason: {type: [string, 'null']}
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        request_id:
+          type: [string, 'null']
